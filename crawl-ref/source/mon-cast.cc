@@ -6779,7 +6779,7 @@ static void _siren_sing(monster* mons, bool avatar)
 
     if (you.can_see(mons))
     {
-        const char * const song_adj = already_mesmerised ? "its luring"
+        const char *song_adj = already_mesmerised ? "her luring"
                                                          : "a haunting";
         const string song_desc = make_stringf(" chants %s song.", song_adj);
         simple_monster_message(mons, song_desc.c_str(), spl);
@@ -6791,7 +6791,7 @@ static void _siren_sing(monster* mons, bool avatar)
                           coinflip()         ? "a haunting song"
                                              : "an eerie melody");
 
-        // If you're already mesmerised by an invisible siren, it
+        // If you're already mesmerised by an invisible siren, she
         // can still prolong the enchantment.
         if (!already_mesmerised)
             return;

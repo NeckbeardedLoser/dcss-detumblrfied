@@ -1431,7 +1431,7 @@ static bool _siren_movement_effect(const monster* mons)
             if (!do_resist)
             {
                 const coord_def oldpos = you.pos();
-                mpr("The pull of its song draws you forwards.");
+                mpr("The pull of her song draws you forwards.");
 
                 if (swapping)
                 {
