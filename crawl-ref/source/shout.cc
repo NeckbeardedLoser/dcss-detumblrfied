@@ -1058,7 +1058,7 @@ static void _actor_apply_noise(actor *act,
     {
         const int loudness = div_rand_round(noise_intensity_millis, 1000);
         act->check_awaken(loudness);
-        if (!(noise.noise_flags & NF_SIREN))
+        if (!(noise.noise_flags & NF_MERMAID))
         {
             you.beholders_check_noise(loudness, player_equip_unrand(UNRAND_DEMON_AXE));
             you.fearmongers_check_noise(loudness, player_equip_unrand(UNRAND_DEMON_AXE));
@@ -1072,11 +1072,11 @@ static void _actor_apply_noise(actor *act,
         // will be jumping on top of them.
         if (grid_distance(apparent_source, you.pos()) <= 3)
             behaviour_event(mons, ME_ALERT, &you, apparent_source);
-        else if ((noise.noise_flags & NF_SIREN)
+        else if ((noise.noise_flags & NF_MERMAID)
                  && mons_secondary_habitat(mons) == HT_WATER
                  && !mons->friendly())
         {
-            // Sirens/merfolk avatar call (hostile) aquatic monsters.
+            // Mermaids/sirens call (hostile) aquatic monsters.
             behaviour_event(mons, ME_ALERT, 0, apparent_source);
         }
         else if ((noise.noise_flags & NF_HUNTING_CRY)

@@ -4240,7 +4240,7 @@ static const pop_entry _invitation_swamp[] =
 static const pop_entry _invitation_shoals[] =
 { // Swamp enemies
   {  1,   1,   80, FLAT, MONS_MERFOLK },
-  {  1,   1,   60, FLAT, MONS_SIREN },
+  {  1,   1,   60, FLAT, MONS_MERMAID },
   {  1,   1,   40, FLAT, MONS_MANTICORE },
   {  1,   1,   20, FLAT, MONS_SNAPPING_TURTLE },
   { 0,0,0,FLAT,MONS_0 }
@@ -6772,10 +6772,10 @@ static void _siren_sing(monster* mons, bool avatar)
                                                        : MSGCH_MONSTER_SPELL);
     const bool already_mesmerised = you.beheld_by(mons);
 
-    noisy(LOS_RADIUS, mons->pos(), mons->mid, NF_SIREN);
+    noisy(LOS_RADIUS, mons->pos(), mons->mid, NF_MERMAID);
 
-    if (avatar && !mons->has_ench(ENCH_MERFOLK_AVATAR_SONG))
-        mons->add_ench(mon_enchant(ENCH_MERFOLK_AVATAR_SONG, 0, mons, 70));
+    if (avatar && !mons->has_ench(ENCH_SIREN_SONG))
+        mons->add_ench(mon_enchant(ENCH_SIREN_SONG, 0, mons, 70));
 
     if (you.can_see(mons))
     {

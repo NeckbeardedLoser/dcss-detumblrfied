@@ -1147,7 +1147,7 @@ monster_type mons_detected_base(monster_type mc)
  */
 bool mons_is_siren_beholder(monster_type mc)
 {
-    return mc == MONS_SIREN || mc == MONS_MERFOLK_AVATAR;
+    return mc == MONS_SIREN || mc == MONS_MERMAID;
 }
 
 /** Does this monster behold opponents like a siren?
@@ -3642,7 +3642,8 @@ static gender_type _mons_class_gender(monster_type mc)
 {
     gender_type gender = GENDER_NEUTER;
 
-    if (mc == MONS_QUEEN_ANT
+    if (mons_genus(mc) == MONS_MERMAID
+        || mc == MONS_QUEEN_ANT
         || mc == MONS_QUEEN_BEE
         || mc == MONS_HARPY
         || mc == MONS_SPHINX
@@ -4767,7 +4768,7 @@ int count_allies()
 bool mons_stores_tracking_data(const monster* mons)
 {
     return mons->type == MONS_THORN_HUNTER
-           || mons->type == MONS_MERFOLK_AVATAR;
+           || mons->type == MONS_SIREN;
 }
 
 bool mons_is_beast(monster_type mc)

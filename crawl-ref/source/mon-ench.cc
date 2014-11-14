@@ -931,8 +931,8 @@ void monster::remove_enchantment_effect(const mon_enchant &me, bool quiet)
             simple_monster_message(this, " is no longer more vulnerable to fire.");
         break;
 
-    case ENCH_MERFOLK_AVATAR_SONG:
-        props.erase("merfolk_avatar_call");
+    case ENCH_SIREN_SONG:
+        props.erase("siren_call");
         break;
 
     case ENCH_POISON_VULN:
@@ -1172,7 +1172,7 @@ void monster::timeout_enchantments(int levels)
         case ENCH_BERSERK:
         case ENCH_INNER_FLAME:
         case ENCH_ROLLING:
-        case ENCH_MERFOLK_AVATAR_SONG:
+        case ENCH_SIREN_SONG:
             del_ench(entry.first);
             break;
 
@@ -1377,7 +1377,7 @@ static bool _apply_grasping_roots(monster* mons)
 }
 
 // Returns true if you resist the merfolk avatar's call.
-static bool _merfolk_avatar_movement_effect(const monster* mons)
+static bool _siren_movement_effect(const monster* mons)
 {
     bool do_resist = (you.attribute[ATTR_HELD]
                       || you.duration[DUR_TIME_STEP]
@@ -1465,7 +1465,7 @@ static bool _merfolk_avatar_movement_effect(const monster* mons)
     return do_resist;
 }
 
-static void _merfolk_avatar_song(monster* mons)
+static void _siren_song(monster* mons)
 {
     // First, attempt to pull the player, if mesmerised
     if (you.beheld_by(mons) && coinflip())
@@ -1474,7 +1474,7 @@ static void _merfolk_avatar_song(monster* mons)
         // turn (to avoid making you jump two spaces at once)
         if (!mons->props["foe_approaching"].get_bool())
         {
-            _merfolk_avatar_movement_effect(mons);
+            _siren_movement_effect(mons);
 
             // Reset foe tracking position so that we won't automatically
             // veto pulling on a subsequent turn because you 'approached'
@@ -1495,14 +1495,14 @@ static void _merfolk_avatar_song(monster* mons)
     }
     if (ally_hd > mons->get_experience_level())
     {
-        if (mons->props.exists("merfolk_avatar_call"))
+        if (mons->props.exists("siren_call"))
         {
             // Normally can only happen if allies of the merfolk avatar show up
             // during a song that has already summoned drowned souls (though is
             // technically possible if some existing ally gains HD instead)
             if (you.see_cell(mons->pos()))
                 mpr("The shadowy forms in the deep grow still as others approach.");
-            mons->props.erase("merfolk_avatar_call");
+            mons->props.erase("siren_call");
         }
 
         return;
@@ -1516,14 +1516,14 @@ static void _merfolk_avatar_song(monster* mons)
 
     if (deep_water.size())
     {
-        if (!mons->props.exists("merfolk_avatar_call"))
+        if (!mons->props.exists("siren_call"))
         {
             if (you.see_cell(mons->pos()))
             {
                 mprf("Shadowy forms rise from the deep at %s song!",
                      mons->name(DESC_ITS).c_str());
             }
-            mons->props["merfolk_avatar_call"].get_bool() = true;
+            mons->props["siren_call"].get_bool() = true;
         }
 
         if (coinflip())
@@ -2203,13 +2203,13 @@ void monster::apply_enchantment(const mon_enchant &me)
         }
         break;
 
-    case ENCH_MERFOLK_AVATAR_SONG:
+    case ENCH_SIREN_SONG:
         // If we've gotten silenced or somehow incapacitated since we started,
         // cancel the song
         if (silenced(pos()) || paralysed() || petrified()
             || confused() || asleep() || has_ench(ENCH_FEAR))
         {
-            del_ench(ENCH_MERFOLK_AVATAR_SONG, true, false);
+            del_ench(ENCH_SIREN_SONG, true, false);
             if (you.can_see(this))
             {
                 mprf("%s song is interrupted.",
@@ -2218,9 +2218,9 @@ void monster::apply_enchantment(const mon_enchant &me)
             break;
         }
 
-        _merfolk_avatar_song(this);
+        _siren_song(this);
 
-        // The merfolk avatar will stop singing without her audience
+        // The siren will stop singing without her audience
         if (!see_cell_no_trans(you.pos()))
             decay_enchantment(en);
 
@@ -2384,7 +2384,7 @@ static const char *enchant_names[] =
 #endif
     "summon_capped",
     "toxic_radiance", "grasping_roots_source", "grasping_roots",
-    "iood_charged", "fire_vuln", "tornado_cooldown", "merfolk_avatar_song",
+    "iood_charged", "fire_vuln", "tornado_cooldown", "siren_song",
     "barbs",
 #if TAG_MAJOR_VERSION == 34
     "building_charge",
