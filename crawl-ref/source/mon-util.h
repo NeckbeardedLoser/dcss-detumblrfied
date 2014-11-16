@@ -146,7 +146,6 @@ struct monsterentry
     int8_t ev; // evasion
     int sec;   // actually mon_spellbook_type
     corpse_effect_type corpse_thingy;
-    zombie_size_type   zombie_size;
     shout_type         shouts;
     mon_intel_type     intel;
     habitat_type     habitat;
@@ -219,6 +218,7 @@ shout_type mons_shouts(monster_type mclass, bool demon_shout = false);
 
 bool mons_is_ghost_demon(monster_type mc);
 bool mons_is_unique(monster_type mc);
+bool mons_is_or_was_unique(const monster& mon);
 bool mons_is_pghost(monster_type mc);
 bool mons_is_draconian_job(monster_type mc);
 bool mons_is_demonspawn_job(monster_type mc);
@@ -490,7 +490,7 @@ monster *choose_random_monster_on_level(
         choose_any_monster);
 void update_monster_symbol(monster_type mtype, cglyph_t md);
 
-void fixup_spells(monster_spells &spells, int hd, bool wizard, bool priest);
+void fixup_spells(monster_spells &spells, int hd);
 
 enum mon_dam_level_type
 {

@@ -514,11 +514,8 @@ void dgn_erase_unused_vault_placements()
             // Fix new indexes for all higher indexed vaults that are
             // still referenced.
             for (int j = i + 1; j < nvaults; ++j)
-            {
-                map<int, int>::iterator imap = new_vault_index_map.find(j);
-                if (imap != new_vault_index_map.end())
-                    --imap->second;
-            }
+                if (int *newidx = map_find(new_vault_index_map, j))
+                    --*newidx;
         }
         else
         {
@@ -533,9 +530,8 @@ void dgn_erase_unused_vault_placements()
         const int map_index = env.level_map_ids(*ri);
         if (map_index != INVALID_MAP_INDEX)
         {
-            map<int, int>::iterator imap = new_vault_index_map.find(map_index);
-            if (imap != new_vault_index_map.end())
-                env.level_map_ids(*ri) = imap->second;
+            if (int *newidx = map_find(new_vault_index_map, map_index))
+                env.level_map_ids(*ri) = *newidx;
         }
     }
 
@@ -4525,6 +4521,7 @@ static bool _apply_item_props(item_def &item, const item_spec &spec,
         && props.exists("plus") && !is_unrandom_artefact(item))
     {
         item.plus = props["plus"].get_int();
+        item_set_appearance(item);
     }
     if (props.exists("ident"))
         item.flags |= props["ident"].get_int();

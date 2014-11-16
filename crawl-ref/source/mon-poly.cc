@@ -9,7 +9,6 @@
 
 #include "artefact.h"
 #include "attitude-change.h"
-#include "butcher.h"
 #include "delay.h"
 #include "describe.h"
 #include "dgn-overview.h"
@@ -156,8 +155,6 @@ static bool _valid_morph(monster* mons, monster_type new_mclass)
         || mons_is_projectile(new_mclass)
         || mons_is_tentacle_or_tentacle_segment(new_mclass)
 
-        // Don't polymorph things without Gods into priests.
-        || mons_class_flag(new_mclass, M_PRIEST) && mons->god == GOD_NO_GOD
         // The spell on Prince Ribbit can't be broken so easily.
         || (new_mclass == MONS_HUMAN
             && (mons->type == MONS_PRINCE_RIBBIT
@@ -298,15 +295,13 @@ void change_monster_type(monster* mons, monster_type targetc)
     const bool old_mon_caught     = mons->caught();
     const char old_ench_countdown = mons->ench_countdown;
 
-    // XXX: mons_is_unique should be converted to monster::is_unique, and that
-    // function should be testing the value of props["original_was_unique"]
-    // which would make things a lot simpler.
-    // See also record_monster_defeat.
-    bool old_mon_unique           = mons_is_unique(mons->type);
-    if (mons->props.exists("original_was_unique")
-        && mons->props["original_was_unique"].get_bool())
+    const bool old_mon_unique = mons_is_or_was_unique(*mons);
+
+    if (!mons->props.exists(ORIGINAL_TYPE_KEY))
     {
-        old_mon_unique = true;
+        mons->props[ORIGINAL_TYPE_KEY].get_int() = mons->type;
+        if (mons->type == MONS_HYDRA)
+            mons->props["old_heads"].get_int() = mons->num_heads;
     }
 
     mon_enchant abj       = mons->get_ench(ENCH_ABJ);
@@ -339,8 +334,6 @@ void change_monster_type(monster* mons, monster_type targetc)
     }
 
     mons->mname = name;
-    mons->props["original_name"] = name;
-    mons->props["original_was_unique"] = old_mon_unique;
     mons->props["no_annotate"] = slimified && old_mon_unique;
     mons->god   = god;
     mons->props.erase("dbname");
@@ -352,9 +345,6 @@ void change_monster_type(monster* mons, monster_type targetc)
 
     // Forget various speech/shout Lua functions.
     mons->props.erase("speech_prefix");
-
-    // Don't allow polymorphing monsters for hides.
-    mons->props[NEVER_HIDE_KEY] = true;
 
     // Keep spells for named monsters, but don't override innate ones
     // for dragons and the like. This means that Sigmund polymorphed

@@ -115,6 +115,14 @@ static void deleteAll(T& collection)
     collection.clear();
 }
 
+template<class M>
+auto map_find(M &map, const typename M::key_type &obj)
+    -> decltype(&map.begin()->second)
+{
+    auto it = map.find(obj);
+    return it == map.end() ? nullptr : &it->second;
+}
+
 static inline int sqr(int x)
 {
     return x * x;

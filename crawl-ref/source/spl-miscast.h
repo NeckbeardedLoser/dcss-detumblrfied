@@ -18,23 +18,41 @@ enum nothing_happens_when_type
     NH_ALWAYS,
 };
 
+enum miscast_source
+{
+    ZOT_TRAP_MISCAST,
+    HELL_EFFECT_MISCAST,
+    WIELD_MISCAST,
+    MELEE_MISCAST,
+    SPELL_MISCAST,
+    ABIL_MISCAST,
+    WIZARD_MISCAST,
+    MUMMY_MISCAST,
+    DECK_MISCAST,
+    // This should always be last.
+    GOD_MISCAST
+};
+
 class actor;
 // class monster;
 
 class MiscastEffect
 {
 public:
-    MiscastEffect(actor* _target, int _source, spell_type _spell, int _pow,
+    MiscastEffect(actor* _target, actor* _act_source,
+                  int _source, spell_type _spell, int _pow,
                   int _fail, string _cause = "",
                   nothing_happens_when_type _nothing_happens = NH_DEFAULT,
                   int _lethality_margin = 0,
                   string _hand_str = "", bool _can_plural_hand = true);
-    MiscastEffect(actor* _target, int _source, spschool_flag_type _school,
+    MiscastEffect(actor* _target, actor* _act_source,
+                  int _source, spschool_flag_type _school,
                   int _level, string _cause,
                   nothing_happens_when_type _nothing_happens = NH_DEFAULT,
                   int _lethality_margin = 0,
                   string _hand_str = "", bool _can_plural_hand = true);
-    MiscastEffect(actor* _target, int _source, spschool_flag_type _school,
+    MiscastEffect(actor* _target, actor* _act_source,
+                  int _source, spschool_flag_type _school,
                   int _pow, int _fail, string _cause,
                   nothing_happens_when_type _nothing_happens = NH_DEFAULT,
                   int _lethality_margin = 0,
@@ -46,7 +64,9 @@ public:
 
 private:
     actor* target;
-    int    source;
+    actor* act_source;
+    // Either a miscast_source, or GOD_MISCAST + god_type enum.
+    int    special_source;
 
     string cause;
 
@@ -67,10 +87,6 @@ private:
 
     string hand_str;
     bool        can_plural_hand;
-
-    int    kill_source;
-    actor* act_source;
-    actor* guilty;
 
     bool source_known;
     bool target_known;
@@ -93,16 +109,6 @@ private:
 private:
     void init();
     string get_default_cause(bool attribute_to_user) const;
-
-    monster* target_as_monster()
-    {
-        return dynamic_cast<monster* >(target);
-    }
-
-    monster* source_as_monster()
-    {
-        return dynamic_cast<monster* >(act_source);
-    }
 
     bool neither_end_silenced();
 

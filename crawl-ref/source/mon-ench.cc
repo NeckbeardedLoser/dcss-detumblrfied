@@ -112,9 +112,8 @@ void monster::update_ench(const mon_enchant &ench)
 {
     if (ench.ench != ENCH_NONE)
     {
-        mon_enchant_list::iterator i = enchantments.find(ench.ench);
-        if (i != enchantments.end())
-            i->second = ench;
+        if (mon_enchant *curr_ench = map_find(enchantments, ench.ench))
+            *curr_ench = ench;
     }
 }
 
@@ -1390,13 +1389,13 @@ static bool _siren_movement_effect(const monster* mons)
         // We use a beam tracer here since it is better at navigating
         // obstructing walls than merely comparing our relative positions
         bolt tracer;
-        tracer.is_beam = true;
+        tracer.pierce          = true;
         tracer.affects_nothing = true;
-        tracer.target = mons->pos();
-        tracer.source = you.pos();
-        tracer.range = LOS_RADIUS;
-        tracer.is_tracer = true;
-        tracer.aimed_at_spot = true;
+        tracer.target          = mons->pos();
+        tracer.source          = you.pos();
+        tracer.range           = LOS_RADIUS;
+        tracer.is_tracer       = true;
+        tracer.aimed_at_spot   = true;
         tracer.fire();
 
         const coord_def newpos = tracer.path_taken[0];

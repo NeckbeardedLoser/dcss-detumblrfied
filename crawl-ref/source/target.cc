@@ -83,7 +83,7 @@ targetter_beam::targetter_beam(const actor *act, int range, zap_type zap,
     beam.ex_size = min_ex_rad;
     beam.aimed_at_spot = true;
 
-    penetrates_targets = beam.is_beam;
+    penetrates_targets = beam.pierce;
     range2 = dist_range(range);
 }
 
@@ -586,11 +586,12 @@ aff_type targetter_cloud::is_affected(coord_def loc)
     if (!valid_aim(aim))
         return AFF_NO;
 
-    map<coord_def, aff_type>::const_iterator it = seen.find(loc);
-    if (it == seen.end() || it->second <= 0) // AFF_TRACER is used privately
-        return AFF_NO;
-
-    return it->second;
+    if (aff_type *aff = map_find(seen, loc))
+    {
+        if (*aff > 0) // AFF_TRACER is used privately
+            return *aff;
+    }
+    return AFF_NO;
 }
 
 targetter_splash::targetter_splash(const actor* act)
