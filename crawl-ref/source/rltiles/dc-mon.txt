@@ -1022,7 +1022,7 @@ murray MONS_MURRAY
 
 ## Sprint specials
 %sdir mon/sprint
-dimme MONS_DIMME
+succubus MONS_SUCCUBUS
 %rim 0
 orb_of_ice MONS_ORB_OF_ICE
 orb_of_electricity MONS_ORB_OF_ELECTRICITY
