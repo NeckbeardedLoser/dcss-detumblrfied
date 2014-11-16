@@ -1866,9 +1866,13 @@ static void _find_parent_branch(branch_type br, int depth,
 
     if (auto levels = map_find(stair_level, br))
     {
-        if (levels->size() > 0)
+    	if(levels->size() > 0)
+        {
             *pd = levels->begin()->depth;
+            return;
+        }
     }
+
     *pd = 0;
 }
 
@@ -2254,6 +2258,7 @@ level_id find_up_level(level_id curr, bool up_branch)
             level_id parent;
             _find_parent_branch(curr.branch, curr.depth,
                                 &parent.branch, &parent.depth);
+
             if (parent.depth > 0)
                 return parent;
             else if (curr.branch == BRANCH_VESTIBULE)
@@ -2477,6 +2482,7 @@ level_pos prompt_translevel_target(int prompt_flags, string& dest_name)
 {
     level_pos target;
     int branch = _prompt_travel_branch(prompt_flags);
+
     const bool remember_targ = (prompt_flags & TPF_REMEMBER_TARGET);
 
     if (branch == ID_CANCEL)
