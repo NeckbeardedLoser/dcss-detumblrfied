@@ -64,6 +64,7 @@ public:
 
 private:
     actor* target;
+    // May be NULL.
     actor* act_source;
     // Either a miscast_source, or GOD_MISCAST + god_type enum.
     int    special_source;
@@ -78,7 +79,6 @@ private:
     int level;
 
 private:
-    kill_category kc;
     killer_type   kt;
 
     nothing_happens_when_type nothing_happens_when;

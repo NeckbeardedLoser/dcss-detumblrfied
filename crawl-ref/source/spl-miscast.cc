@@ -57,7 +57,7 @@ MiscastEffect::MiscastEffect(actor* _target, actor* _act_source,
                              bool _can_plural) :
     target(_target), act_source(_act_source),
     special_source(_source), cause(_cause), spell(_spell),
-    school(SPTYP_NONE), pow(_pow), fail(_fail), level(-1), kc(KC_NCATEGORIES),
+    school(SPTYP_NONE), pow(_pow), fail(_fail), level(-1),
     kt(KILL_NONE), nothing_happens_when(_nothing_happens),
     lethality_margin(_lethality_margin), hand_str(_hand_str),
     can_plural_hand(_can_plural)
@@ -80,7 +80,7 @@ MiscastEffect::MiscastEffect(actor* _target, actor* _act_source, int _source,
     target(_target), act_source(_act_source),
     special_source(_source), cause(_cause),
     spell(SPELL_NO_SPELL), school(_school), pow(-1), fail(-1), level(_level),
-    kc(KC_NCATEGORIES), kt(KILL_NONE), nothing_happens_when(_nothing_happens),
+    kt(KILL_NONE), nothing_happens_when(_nothing_happens),
     lethality_margin(_lethality_margin), hand_str(_hand_str),
     can_plural_hand(_can_plural)
 {
@@ -102,7 +102,7 @@ MiscastEffect::MiscastEffect(actor* _target, actor* _act_source, int _source,
     target(_target), act_source(_act_source),
     special_source(_source), cause(_cause),
     spell(SPELL_NO_SPELL), school(_school), pow(_pow), fail(_fail), level(-1),
-    kc(KC_NCATEGORIES), kt(KILL_NONE), nothing_happens_when(_nothing_happens),
+    kt(KILL_NONE), nothing_happens_when(_nothing_happens),
     lethality_margin(_lethality_margin), hand_str(_hand_str),
     can_plural_hand(_can_plural)
 {
@@ -142,7 +142,6 @@ void MiscastEffect::init()
 
     if (act_source && act_source->is_player())
     {
-        kc           = KC_YOU;
         kt           = KILL_YOU_MISSILE;
         source_known = true;
     }
@@ -156,11 +155,6 @@ void MiscastEffect::init()
         else
             kt = KILL_MON_MISSILE;
 
-        if (act_source->as_monster()->friendly())
-            kc = KC_FRIENDLY;
-        else
-            kc = KC_OTHER;
-
         source_known = you.can_see(act_source);
 
         if (target_known && special_source == MUMMY_MISCAST)
@@ -170,9 +164,6 @@ void MiscastEffect::init()
     {
         ASSERT(special_source != MELEE_MISCAST);
 
-        act_source = target;
-
-        kc = KC_OTHER;
         kt = KILL_MISCAST;
 
         if (special_source == ZOT_TRAP_MISCAST)
@@ -189,7 +180,6 @@ void MiscastEffect::init()
             source_known = true;
     }
 
-    ASSERT(kc != KC_NCATEGORIES);
     ASSERT(kt != KILL_NONE);
 
     // source_known = false for MELEE_MISCAST so that melee miscasts
@@ -1742,7 +1732,7 @@ void MiscastEffect::_divination_mon(int severity)
             mon_msg_seen = "@The_monster@ looks disoriented.";
             target->confuse(
                 act_source,
-                1 + random2(3 + act_source->get_hit_dice()));
+                1 + random2(3 + (act_source ? act_source->get_hit_dice() : 13)));
             break;
         }
         break;
@@ -1751,7 +1741,7 @@ void MiscastEffect::_divination_mon(int severity)
         mon_msg_seen = "@The_monster@ shudders.";
         target->confuse(
             act_source,
-            5 + random2(3 + act_source->get_hit_dice()));
+            5 + random2(3 + (act_source ? act_source->get_hit_dice() : 13)));
         break;
 
     case 3:         // nasty
@@ -1760,7 +1750,7 @@ void MiscastEffect::_divination_mon(int severity)
             target->as_monster()->forget_random_spell();
         target->confuse(
             act_source,
-            8 + random2(3 + act_source->get_hit_dice()));
+            8 + random2(3 + (act_source ? act_source->get_hit_dice() : 13)));
         break;
     }
     do_msg();
