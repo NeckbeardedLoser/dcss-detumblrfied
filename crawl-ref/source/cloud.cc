@@ -31,6 +31,138 @@
 #include "tiledef-main.h"
 #include "unwind.h"
 
+/// A portrait of a cloud_type.
+struct cloud_data
+{
+    /// A (relatively) short name for the cloud. May be referenced from lua.
+    const char* terse_name;
+    /// Another name for the cloud. If NULL, defaults to terse name.
+    const char* verbose_name;
+    /// The associated "beam" (effect) for this cloud type.
+    beam_type beam_effect;
+    /// How much damage a cloud is expected to do in one turn, minimum.
+    int expected_base_damage;
+    /// The amount of additional random damage a cloud is expected to maybe do.
+    int expected_random_damage;
+};
+
+/// A map from cloud_type to cloud_data.
+static const cloud_data clouds[] = {
+    // CLOUD_NONE,
+    { "?", "?",                                 // terse, verbose name
+    },
+    // CLOUD_FIRE,
+    { "flame", "roaring flames",                // terse, verbose name
+       BEAM_FIRE,                               // beam_effect
+       15, 46,                                  // base, expected random damage
+    },
+    // CLOUD_MEPHITIC,
+    { "noxious fumes", NULL,                    // terse, verbose name
+      BEAM_MEPHITIC,                            // beam_effect
+      0, 19,                                    // base, expected random damage
+    },
+    // CLOUD_COLD,
+    { "freezing vapour", "freezing vapours",    // terse, verbose name
+      BEAM_COLD,                                // beam_effect
+      15, 46,                                   // base, expected random damage
+    },
+    // CLOUD_POISON,
+    { "poison gas", NULL,                       // terse, verbose name
+      BEAM_POISON,                              // beam_effect
+      0, 37,                                    // base, expected random damage
+    },
+    // CLOUD_BLACK_SMOKE,
+    { "black smoke",  NULL,                     // terse, verbose name
+    },
+    // CLOUD_GREY_SMOKE,
+    { "grey smoke",  NULL,                      // terse, verbose name
+    },
+    // CLOUD_BLUE_SMOKE,
+    { "blue smoke",  NULL,                      // terse, verbose name
+    },
+    // CLOUD_PURPLE_SMOKE,
+    { "purple smoke",  NULL,                    // terse, verbose name
+    },
+    // CLOUD_TLOC_ENERGY,
+    { "translocational energy",  NULL,          // terse, verbose name
+    },
+    // CLOUD_FOREST_FIRE,
+    { "fire", "roaring flames",                 // terse, verbose name
+      BEAM_FIRE,                                // beam_effect
+      15, 46                                    // base, expected random damage
+    },
+    // CLOUD_STEAM,
+    { "steam", "a cloud of scalding steam",     // terse, verbose name
+      BEAM_STEAM,                               // beam_effect
+      0, 25,
+    },
+#if TAG_MAJOR_VERSION == 34
+    // CLOUD_GLOOM,
+    { "gloom", "thick gloom",                   // terse, verbose name
+    },
+#endif
+    // CLOUD_INK,
+    { "ink",  NULL,                             // terse, verbose name
+      BEAM_INK,                                 // beam_effect
+    },
+    // CLOUD_PETRIFY,
+    { "calcifying dust",  NULL,                 // terse, verbose name
+      BEAM_PETRIFYING_CLOUD,                    // beam_effect
+    },
+    // CLOUD_HOLY_FLAMES,
+    { "blessed fire", NULL,                     // terse, verbose name
+      BEAM_HOLY_FLAME,                          // beam_effect
+      15, 46,                                   // base, expected random damage
+    },
+    // CLOUD_MIASMA,
+    { "foul pestilence", "dark miasma",         // terse, verbose name
+      BEAM_MIASMA,                              // beam_effect
+    },
+    // CLOUD_MIST,
+    { "thin mist", NULL,                        // terse, verbose name
+    },
+    // CLOUD_CHAOS,
+    { "seething chaos", NULL,                   // terse, verbose name
+      BEAM_CHAOS,                               // beam_effect
+    },
+    // CLOUD_RAIN,
+    { "rain", "the rain",                       // terse, verbose name
+    },
+    // CLOUD_MUTAGENIC,
+    { "mutagenic fog",  NULL,                   // terse, verbose name
+    },
+    // CLOUD_MAGIC_TRAIL,
+    { "magical condensation", NULL,             // terse, verbose name
+    },
+    // CLOUD_TORNADO,
+    { "ranging winds", NULL,                    // terse, verbose name
+    },
+    // CLOUD_DUST_TRAIL,
+    { "sparse dust",  NULL,                     // terse, verbose name
+    },
+    // CLOUD_GHOSTLY_FLAME,
+    { "ghostly flame", NULL,                    // terse, verbose name
+       BEAM_NONE,                               // beam_effect
+       0, 25,                                   // base, expected random damage
+    },
+    // CLOUD_ACID,
+    { "acidic fog", NULL,                       // terse, verbose name
+      BEAM_ACID,                                // beam_effect
+      15, 46,                                   // base, random expected damage
+    },
+    // CLOUD_STORM,
+    { "thunder", "a thunderstorm",              // terse, verbose name
+      BEAM_NONE,                                // beam_effect
+      60, 46,                                   // base, random expected damage
+    },
+    // CLOUD_NEGATIVE_ENERGY,
+    { "negative energy", NULL,                  // terse, verbose name
+      BEAM_NEG,                                 // beam_effect
+      15, 46,                                   // base, random expected damage
+    },
+};
+COMPILE_CHECK(ARRAYSZ(clouds) == NUM_CLOUD_TYPES);
+
 static int _actor_cloud_damage(actor *act, const cloud_struct &cloud,
                                bool maximum_damage);
 
@@ -59,29 +191,9 @@ static int _actual_spread_rate(cloud_type type, int spread_rate)
 
 static beam_type _cloud2beam(cloud_type flavour)
 {
-    switch (flavour)
-    {
-    default:
-#if TAG_MAJOR_VERSION == 34
-    case CLOUD_GLOOM:
-#endif
-    case CLOUD_NONE:         return BEAM_NONE;
-    case CLOUD_FIRE:         return BEAM_FIRE;
-    case CLOUD_FOREST_FIRE:  return BEAM_FIRE;
-    case CLOUD_MEPHITIC:     return BEAM_MEPHITIC;
-    case CLOUD_COLD:         return BEAM_COLD;
-    case CLOUD_POISON:       return BEAM_POISON;
-    case CLOUD_STEAM:        return BEAM_STEAM;
-    case CLOUD_MIASMA:       return BEAM_MIASMA;
-    case CLOUD_CHAOS:        return BEAM_CHAOS;
-    case CLOUD_INK:          return BEAM_INK;
-    case CLOUD_HOLY_FLAMES:  return BEAM_HOLY_FLAME;
-    case CLOUD_PETRIFY:      return BEAM_PETRIFYING_CLOUD;
-    case CLOUD_RANDOM:       return BEAM_RANDOM;
-    case CLOUD_ACID:         return BEAM_ACID;
-    case CLOUD_NEGATIVE_ENERGY:
-                             return BEAM_NEG;
-    }
+    if (flavour == CLOUD_RANDOM)
+        return BEAM_RANDOM;
+    return clouds[flavour].beam_effect;
 }
 
 #ifdef ASSERTS
@@ -862,6 +974,8 @@ bool actor_cloud_immune(const actor *act, const cloud_struct &cloud)
         return act->res_elec() >= 3;
     case CLOUD_NEGATIVE_ENERGY:
         return act->res_negative_energy() >= 3;
+    case CLOUD_TORNADO:
+        return act->res_wind();
     default:
         return false;
     }
@@ -1285,97 +1399,48 @@ bool is_damaging_cloud(cloud_type type, bool accept_temp_resistances, bool yours
     }
 }
 
+/**
+ * Will the given monster refuse to walk into the given cloud?
+ *
+ * @param mons              The monster in question.
+ * @param cloud             The cloud in question.
+ * @param extra_careful     Whether the monster could suffer any harm from the
+ *                          cloud at all, even if it would normally be brave
+ *                          enough (based on e.g. hp) to enter the cloud.
+ * @return                  Whether the monster is NOT ok to enter the cloud.
+ */
 static bool _mons_avoids_cloud(const monster* mons, const cloud_struct& cloud,
-                               bool placement)
+                               bool extra_careful)
 {
-    bool extra_careful = placement;
-    cloud_type cl_type = cloud.type;
+    // clouds you're immune to are inherently safe.
+    if (actor_cloud_immune(mons, cloud))
+        return false;
 
-    if (placement)
-        extra_careful = true;
+    // harmless clouds, likewise.
+    if (is_harmless_cloud(cloud.type))
+        return false;
 
     // Berserk monsters are less careful and will blindly plow through any
     // dangerous cloud, just to kill you. {due}
     if (!extra_careful && mons->berserk_or_insane())
         return false;
 
-    if (you_worship(GOD_FEDHAS) && fedhas_protects(mons)
-        && (cloud.whose == KC_YOU || cloud.whose == KC_FRIENDLY)
-        && (mons->friendly() || mons->neutral()))
-    {
-        return false;
-    }
+    const int resistance = _actor_cloud_resist(mons, cloud);
 
-    switch (cl_type)
+    // Thinking things avoid things they are vulnerable to (-resists)
+    if (mons_intel(mons) >= I_ANIMAL && resistance < 0)
+        return true;
+
+    switch (cloud.type)
     {
     case CLOUD_MIASMA:
         // Even the dumbest monsters will avoid miasma if they can.
-        return !mons->res_rotting();
-
-    case CLOUD_FIRE:
-    case CLOUD_FOREST_FIRE:
-        if (mons->res_fire() > 1)
-            return false;
-
-        if (extra_careful)
-            return true;
-
-        if (mons_intel(mons) >= I_ANIMAL && mons->res_fire() < 0)
-            return true;
-
-        if (mons->hit_points >= 15 + random2avg(46, 5))
-            return false;
-        break;
-
-    case CLOUD_MEPHITIC:
-        if (mons->res_poison() > 0)
-            return false;
-
-        if (extra_careful)
-            return true;
-
-        if (mons_intel(mons) >= I_ANIMAL && mons->res_poison() < 0)
-            return true;
-
-        if (x_chance_in_y(mons->get_hit_dice() - 1, 5))
-            return false;
-
-        if (mons->hit_points >= random2avg(19, 2))
-            return false;
-        break;
-
-    case CLOUD_COLD:
-        if (mons->res_cold() > 1)
-            return false;
-
-        if (extra_careful)
-            return true;
-
-        if (mons_intel(mons) >= I_ANIMAL && mons->res_cold() < 0)
-            return true;
-
-        if (mons->hit_points >= 15 + random2avg(46, 5))
-            return false;
-        break;
-
-    case CLOUD_POISON:
-        if (mons->res_poison() > 0)
-            return false;
-
-        if (extra_careful)
-            return true;
-
-        if (mons_intel(mons) >= I_ANIMAL && mons->res_poison() < 0)
-            return true;
-
-        if (mons->hit_points >= random2avg(37, 4))
-            return false;
-        break;
+        return true;
 
     case CLOUD_RAIN:
         // Fiery monsters dislike the rain.
         if (mons->is_fiery() && extra_careful)
-            return true;
+                return true;
 
         // We don't care about what's underneath the rain cloud if we can fly.
         if (mons->flight_mode())
@@ -1386,52 +1451,36 @@ static bool _mons_avoids_cloud(const monster* mons, const cloud_struct& cloud,
             return false;
 
         // This position could become deep water, and they might drown.
-        if (grd(cloud.pos) == DNGN_SHALLOW_WATER)
+        if (grd(cloud.pos) == DNGN_SHALLOW_WATER
+            && mons_intel(mons) > I_PLANT)
+        {
             return true;
+        }
         break;
 
-    case CLOUD_TORNADO:
-        // Ball lightnings are not afraid of a _storm_, duh.  Or elementals.
-        if (mons->res_wind())
+    case CLOUD_MEPHITIC:
+        if (x_chance_in_y(mons->get_hit_dice() - 1, 5))
             return false;
 
-        // Locust swarms are too stupid to avoid winds.
-        if (mons_intel(mons) >= I_ANIMAL)
-            return true;
-        break;
-
-    case CLOUD_PETRIFY:
-        if (mons->res_petrify())
-            return false;
-
-        if (extra_careful)
-            return true;
-
-        if (mons_intel(mons) >= I_ANIMAL)
-            return true;
-        break;
-
-    case CLOUD_GHOSTLY_FLAME:
-        if (mons->res_negative_energy() > 2)
-            return false;
-
-        if (extra_careful)
-            return true;
-
-        if (mons->hit_points >= random2avg(25, 3))
-            return false;
-        break;
-
+        // fallthrough to damaging cloud cases
     default:
+    {
+        if (extra_careful)
+            return true;
+
+        const int rand_dam = clouds[cloud.type].expected_random_damage;
+        const int trials = max(1, rand_dam/9);
+        const int hp_threshold = clouds[cloud.type].expected_base_damage +
+                                 random2avg(rand_dam, trials);
+        if (mons->hit_points >= hp_threshold)
+            return false;
         break;
+    }
     }
 
     // Exceedingly dumb creatures will wander into harmful clouds.
-    if (is_harmless_cloud(cl_type)
-        || mons_intel(mons) == I_PLANT && !extra_careful)
-    {
+    if (mons_intel(mons) == I_PLANT && !extra_careful)
         return false;
-    }
 
     // If we get here, the cloud is potentially harmful.
     return true;
@@ -1508,54 +1557,14 @@ string cloud_name_at_index(int cloudno)
         return cloud_type_name(env.cloud[cloudno].type);
 }
 
-// [ds] XXX: Some of these aren't so terse and some of the verbose
-// names aren't very verbose. Be warned that names in
-// _terse_cloud_names may be referenced by fog machines.
-static const char *_terse_cloud_names[] =
-{
-    "?",
-    "flame", "noxious fumes", "freezing vapour", "poison gas",
-    "black smoke", "grey smoke", "blue smoke",
-    "purple smoke", "translocational energy", "fire",
-    "steam",
-#if TAG_MAJOR_VERSION == 34
-    "gloom",
-#endif
-    "ink",
-    "calcifying dust",
-    "blessed fire", "foul pestilence", "thin mist",
-    "seething chaos", "rain", "mutagenic fog", "magical condensation",
-    "raging winds",
-    "sparse dust", "ghostly flame",
-    "acidic fog", "thunder", "negative energy"
-};
-
-static const char *_verbose_cloud_names[] =
-{
-    "?",
-    "roaring flames", "noxious fumes", "freezing vapours", "poison gas",
-    "black smoke", "grey smoke", "blue smoke",
-    "purple smoke", "translocational energy", "roaring flames",
-    "a cloud of scalding steam",
-#if TAG_MAJOR_VERSION == 34
-    "thick gloom",
-#endif
-    "ink",
-    "calcifying dust",
-    "blessed fire", "dark miasma", "thin mist", "seething chaos", "the rain",
-    "mutagenic fog", "magical condensation", "raging winds",
-    "sparse dust", "ghostly flame",
-    "acidic fog", "a thunderstorm", "negative energy"
-};
-
 string cloud_type_name(cloud_type type, bool terse)
 {
-    COMPILE_CHECK(ARRAYSZ(_terse_cloud_names) == NUM_CLOUD_TYPES);
-    COMPILE_CHECK(ARRAYSZ(_verbose_cloud_names) == NUM_CLOUD_TYPES);
+    if (type <= CLOUD_NONE || type >= NUM_CLOUD_TYPES)
+        return "buggy goodness";
 
-    return type <= CLOUD_NONE || type >= NUM_CLOUD_TYPES
-           ? "buggy goodness"
-           : (terse? _terse_cloud_names : _verbose_cloud_names)[type];
+    if (terse || clouds[type].verbose_name == NULL)
+        return clouds[type].terse_name;
+    return clouds[type].verbose_name;
 }
 
 ////////////////////////////////////////////////////////////////////////

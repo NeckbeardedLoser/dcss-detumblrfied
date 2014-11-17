@@ -29,6 +29,7 @@
 #include "stringutil.h"
 #include "terrain.h"
 #include "traps.h"
+#include "view.h"
 #include "xom.h"
 
 bool feature_mimic_at(const coord_def &c)
@@ -314,6 +315,7 @@ void change_monster_type(monster* mons, monster_type targetc)
     mon_enchant tp        = mons->get_ench(ENCH_TP);
     mon_enchant vines     = mons->get_ench(ENCH_AWAKEN_VINES);
     mon_enchant forest    = mons->get_ench(ENCH_AWAKEN_FOREST);
+    mon_enchant hexed     = mons->get_ench(ENCH_HEXED);
 
     monster_spells spl    = mons->spells;
     const bool need_save_spells
@@ -366,6 +368,7 @@ void change_monster_type(monster* mons, monster_type targetc)
     mons->add_ench(tp);
     mons->add_ench(vines);
     mons->add_ench(forest);
+    mons->add_ench(hexed);
 
     // Allows for handling of submerged monsters which polymorph into
     // monsters that can't submerge on this square.
@@ -642,17 +645,10 @@ void seen_monster(monster* mons)
     item_def* weapon = mons->weapon();
     if (weapon && is_range_weapon(*weapon))
         mons->flags |= MF_SEEN_RANGED;
+    mark_mon_equipment_seen(mons);
 
     // Monster was viewed this turn
     mons->flags |= MF_WAS_IN_VIEW;
-
-    // mark items as seen.
-    for (int slot = MSLOT_WEAPON; slot <= MSLOT_LAST_VISIBLE_SLOT; slot++)
-    {
-        int item_id = mons->inv[slot];
-        if (item_id != NON_ITEM)
-            mitm[item_id].flags |= ISFLAG_SEEN;
-    }
 
     if (mons->flags & MF_SEEN)
         return;

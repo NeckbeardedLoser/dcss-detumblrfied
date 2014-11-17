@@ -10,11 +10,13 @@
 #include <cstdio>
 #include <iomanip>
 #include <numeric>
+#include <set>
 #include <sstream>
 #include <string>
 
 #include "artefact.h"
 #include "branch.h"
+#include "butcher.h"
 #include "clua.h"
 #include "command.h"
 #include "database.h"
@@ -1805,6 +1807,22 @@ string get_item_description(const item_def &item, bool verbose,
     case OBJ_CORPSES:
         if (item.sub_type == CORPSE_SKELETON)
             break;
+
+        if (mons_class_leaves_hide(item.mon_type))
+        {
+            description << "\n\n";
+            if (item.props.exists(MANGLED_CORPSE_KEY))
+            {
+                description << "This corpse is badly mangled; its hide is "
+                               "beyond any hope of recovery.";
+            }
+            else
+            {
+                description << "Butchering may allow you to recover this "
+                               "creature's hide, which can be enchanted into "
+                               "armour.";
+            }
+        }
         // intentional fall-through
     case OBJ_FOOD:
         if (item.base_type == OBJ_FOOD)
@@ -3171,33 +3189,26 @@ static const char* _describe_attack_flavour(attack_flavour flavour)
 static string _monster_attacks_description(const monster_info& mi)
 {
     ostringstream result;
-    vector<attack_flavour> attack_flavours;
+    set<attack_flavour> attack_flavours;
     vector<string> attack_descs;
     // Weird attack types that act like attack flavours.
     bool trample = false;
     bool reach_sting = false;
 
-    for (int i = 0; i < MAX_NUM_ATTACKS; ++i)
+    for (const auto &attack : mi.attack)
     {
-        attack_flavour af = mi.attack[i].flavour;
-
-        bool match = false;
-        for (unsigned int k = 0; k < attack_flavours.size(); ++k)
-            if (attack_flavours[k] == af)
-                match = true;
-
-        if (!match)
+        attack_flavour af = attack.flavour;
+        if (!attack_flavours.count(af))
         {
-            attack_flavours.push_back(af);
-            const char* desc = _describe_attack_flavour(af);
-            if (*desc)
+            attack_flavours.insert(af);
+            if (const char* desc = _describe_attack_flavour(af))
                 attack_descs.push_back(desc);
         }
 
-        if (mi.attack[i].type == AT_TRAMPLE)
+        if (attack.type == AT_TRAMPLE)
             trample = true;
 
-        if (mi.attack[i].type == AT_REACH_STING)
+        if (attack.type == AT_REACH_STING)
             reach_sting = true;
     }
 

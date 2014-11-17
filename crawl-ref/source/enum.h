@@ -1846,6 +1846,7 @@ enum enchant_type
     ENCH_NEGATIVE_VULN,
     ENCH_CONDENSATION_SHIELD,
     ENCH_RESISTANCE,
+    ENCH_HEXED,
     // Update enchantment names in mon-ench.cc when adding or removing
     // enchantments.
     NUM_ENCHANTMENTS
@@ -2092,7 +2093,9 @@ enum job_type
     JOB_WANDERER,
     JOB_ARTIFICER,                     //   Greenberg/Bane
     JOB_ARCANE_MARKSMAN,
+#if TAG_MAJOR_VERSION == 34
     JOB_DEATH_KNIGHT,
+#endif
     JOB_ABYSSAL_KNIGHT,
 #if TAG_MAJOR_VERSION == 34
     JOB_JESTER,
@@ -2288,7 +2291,7 @@ enum monster_type                      // menv[].type
 #if TAG_MAJOR_VERSION == 34
     MONS_GREY_RAT,
 #endif
-    MONS_GREEN_RAT,
+    MONS_RIVER_RAT,
     MONS_ORANGE_RAT,
 #if TAG_MAJOR_VERSION == 34
     MONS_LABORATORY_RAT,

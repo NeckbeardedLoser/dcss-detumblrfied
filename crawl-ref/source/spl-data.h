@@ -626,7 +626,7 @@ static const struct spell_desc spelldata[] =
 {
     SPELL_CONTROL_UNDEAD, "Control Undead",
      SPTYP_NECROMANCY,
-     SPFLAG_NEEDS_TRACER,
+     SPFLAG_NONE,
      4,
      200,
      -1, -1,
@@ -2463,7 +2463,7 @@ static const struct spell_desc spelldata[] =
 {
     SPELL_INNER_FLAME, "Inner Flame",
      SPTYP_HEXES | SPTYP_FIRE,
-     SPFLAG_DIR_OR_TARGET | SPFLAG_NOT_SELF | SPFLAG_NEUTRAL | SPFLAG_NEEDS_TRACER,
+     SPFLAG_DIR_OR_TARGET | SPFLAG_NOT_SELF | SPFLAG_NEUTRAL,
      3,
      200,
      LOS_RADIUS, LOS_RADIUS,

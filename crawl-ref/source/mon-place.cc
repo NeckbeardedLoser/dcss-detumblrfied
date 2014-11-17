@@ -1916,14 +1916,38 @@ bool zombie_picker::veto(monster_type mt)
         return true;
     if (mons_class_holiness(corpse_type) != MH_NATURAL)
         return true;
+    if (!_good_zombie(corpse_type, zombie_kind, pos))
+        return true;
+    return positioned_monster_picker::veto(mt);
+}
 
-    return !_good_zombie(corpse_type, zombie_kind, pos);
+static bool _mc_too_slow_for_zombies(monster_type mon)
+{
+    // no speed < 10 zombies!
+    return mons_class_zombie_base_speed(mons_species(mon)) < 10;
+}
+
+/**
+ * Pick a local monster type that's suitable for turning into a corpse.
+ *
+ * @param place     The branch/level that the monster type should come from,
+ *                  if possible. (Not guaranteed for e.g. branches with no
+ *                  corpses.)
+ * @return          A monster type that can be used to fill out a corpse.
+ */
+monster_type pick_local_corpsey_monster(level_id place)
+{
+    return pick_local_zombifiable_monster(place, MONS_NO_MONSTER, coord_def(),
+                                          true);
 }
 
 monster_type pick_local_zombifiable_monster(level_id place,
                                             monster_type cs,
-                                            const coord_def& pos)
+                                            const coord_def& pos,
+                                            bool for_corpse)
 {
+    const bool really_in_d = place.branch == BRANCH_DUNGEON;
+
     if (crawl_state.game_is_zotdef())
     {
         place = level_id(BRANCH_DUNGEON,
@@ -1946,14 +1970,19 @@ monster_type pick_local_zombifiable_monster(level_id place,
 
     place.depth = max(1, min(place.depth, branch_ood_cap(place.branch)));
 
-    if (monster_type mt =
-            picker.pick_with_veto(zombie_population(place.branch),
-                                  place.depth, MONS_0))
-    {
-        return mt;
-    }
+    const bool need_veto = really_in_d && !for_corpse;
+    mon_pick_vetoer veto = need_veto ? _mc_too_slow_for_zombies : NULL;
 
-    return pick_monster_all_branches(place.absdepth(), picker);
+    // try to grab a proper zombifiable monster
+    monster_type mt = picker.pick_with_veto(zombie_population(place.branch),
+                                            place.depth, MONS_0, veto);
+    // there might not be one in this branch - if we can't find one, try
+    // elsewhere
+    if (!mt)
+        mt = pick_monster_all_branches(place.absdepth(), picker);
+
+    ASSERT(mons_class_can_be_zombified(mons_species(mt)));
+    return mt;
 }
 
 void roll_zombie_hp(monster* mon)
@@ -2126,15 +2155,8 @@ static band_type _choose_band(monster_type mon_type, int &band_size,
         break;
 
     case MONS_CAUSTIC_SHRIKE:
-        switch (you.where_are_you)
-        {
-            case BRANCH_DUNGEON:
-                break;
-            default:
-                band = BAND_CAUSTIC_SHRIKE;
-                band_size = 2 + random2(3);
-                break;
-        }
+        band = BAND_CAUSTIC_SHRIKE;
+        band_size = 2 + random2(4);
         break;
 
     case MONS_FLYING_SKULL:
@@ -2353,7 +2375,7 @@ static band_type _choose_band(monster_type mon_type, int &band_size,
         band_size = 2 + random2(4);
         break;
 
-    case MONS_GREEN_RAT:
+    case MONS_RIVER_RAT:
         band = BAND_GREEN_RATS;
         band_size = 4 + random2(6);
         break;
@@ -3151,7 +3173,7 @@ static monster_type _band_member(band_type band, int which)
     case BAND_WOLVES:
         return MONS_WOLF;
     case BAND_GREEN_RATS:
-        return MONS_GREEN_RAT;
+        return MONS_RIVER_RAT;
     case BAND_ORANGE_RATS:
         return MONS_ORANGE_RAT;
     case BAND_SHEEP:

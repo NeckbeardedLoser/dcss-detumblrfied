@@ -7,6 +7,7 @@
 
 #include "mon-util.h"
 
+#include <algorithm> // find
 #include <cmath>
 #include <sstream>
 
@@ -2337,13 +2338,7 @@ unique_books get_unique_spells(const monster_info &mi,
 
             spell = slot.spell;
 
-            bool match = false;
-
-            for (size_t k = 0; k < spells.size(); ++k)
-                if (spell == spells[k])
-                    match = true;
-
-            if (!match)
+            if (find(spells.begin(), spells.end(), spell) == spells.end())
                 spells.push_back(spell);
         }
 
@@ -3653,7 +3648,6 @@ static gender_type _mons_class_gender(monster_type mc)
         || mc == MONS_QUEEN_ANT
         || mc == MONS_QUEEN_BEE
         || mc == MONS_HARPY
-        || mc == MONS_SPHINX
         || mc == MONS_WATER_NYMPH)
     {
         gender = GENDER_FEMALE;

@@ -145,8 +145,6 @@ monster_type fill_out_corpse(const monster* mons,
             corpse.props[MONSTER_NUMBER] = short(mons->props["old_heads"].get_int());
         // XXX: Appears to be a safe conversion?
         corpse.props[MONSTER_MID]      = int(mons->mid);
-        if (mons->props.exists(NEVER_HIDE_KEY))
-            corpse.props[NEVER_HIDE_KEY] = true;
     }
 
     monster_info minfo(corpse_class);
@@ -2800,12 +2798,12 @@ int monster_die(monster* mons, killer_type killer,
         && !timeout
         && !unsummoned)
     {
-        //XXX: these messages don't work if the monster is gendered!
         if (!(mons->flags & MF_KNOWN_SHIFTER)
             && mons->is_shapeshifter())
         {
-            simple_monster_message(mons, "'s shape twists and changes as "
-                                  "it dies.");
+            const string message = "'s shape twists and changes as " +
+                                   mons->pronoun(PRONOUN_SUBJECTIVE) + " dies.";
+            simple_monster_message(mons, message.c_str());
         }
         else if (mons->props.exists(ORIGINAL_TYPE_KEY))
         {

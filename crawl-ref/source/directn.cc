@@ -1520,7 +1520,7 @@ void direction_chooser::print_target_monster_description(bool &did_cloud) const
     // Build the final description string.
     if (!suffixes.empty())
     {
-        text += " ("
+        text += "("
             + comma_separated_line(suffixes.begin(), suffixes.end(), ", ")
             + ")";
     }
@@ -3518,7 +3518,7 @@ string get_monster_equipment_desc(const monster_info& mi,
 
     if (mon_qvr)
     {
-        const string qvr_desc = make_stringf("wearing %s",
+        const string qvr_desc = make_stringf("quivering %s",
                                              mon_qvr->name(DESC_A).c_str());
         item_descriptions.push_back(qvr_desc);
     }
@@ -3548,9 +3548,10 @@ string get_monster_equipment_desc(const monster_info& mi,
     const string item_description = comma_separated_line(
                                                 item_descriptions.begin(),
                                                 item_descriptions.end());
-    if (!item_description.empty())
-        desc += ", " + item_description;
-    return desc;
+
+    if (!item_description.empty() && !desc.empty())
+        desc += ",";
+    return desc + " " + item_description;
 }
 
 static bool _print_cloud_desc(const coord_def where)

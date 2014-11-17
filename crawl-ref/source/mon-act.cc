@@ -278,20 +278,16 @@ static bool _swap_monsters(monster* mover, monster* moved)
 
 static bool _do_mon_spell(monster* mons, bolt &beem)
 {
-    // Shapeshifters don't get spells.
-    if (!mons->is_shapeshifter() || !mons->is_actual_spellcaster())
+    if (handle_mon_spell(mons, beem))
     {
-        if (handle_mon_spell(mons, beem))
-        {
-            // If a Pan lord/pghost is known to be a spellcaster, it's safer
-            // to assume it has ranged spells too.  For others, it'd just
-            // lead to unnecessary false positives.
-            if (mons_is_ghost_demon(mons->type))
-                mons->flags |= MF_SEEN_RANGED;
+        // If a Pan lord/pghost is known to be a spellcaster, it's safer
+        // to assume it has ranged spells too.  For others, it'd just
+        // lead to unnecessary false positives.
+        if (mons_is_ghost_demon(mons->type))
+            mons->flags |= MF_SEEN_RANGED;
 
-            mmov.reset();
-            return true;
-        }
+        mmov.reset();
+        return true;
     }
 
     return false;
@@ -898,6 +894,75 @@ static bool _handle_evoke_equipment(monster* mons, bolt & beem)
 }
 
 /**
+ * Check if the monster has a swooping attack and is in a position to
+ * use it, and do so if they can.
+ *
+ * @param mons The monster who might be swooping.
+ * @return Whether they performed a swoop attack. False if the monster
+ *         can't swoop, the foe isn't hostile, the positioning doesn't
+ *         work, etc.
+ */
+static bool _handle_swoop(monster* mons)
+{
+    // TODO: check for AT_SWOOP in other slots and/or make it work there?
+    if (mons_attack_spec(mons, 0, true).type != AT_SWOOP)
+        return false;
+
+    if (mons->confused() || !mons->can_see(mons->get_foe()))
+        return false;
+
+    if (mons->foe_distance() >= 5 || mons->foe_distance() == 1)
+        return false;
+
+    if (!one_chance_in(4))
+        return false;
+
+    if (mons->props.exists("swoop_cooldown")
+        && (you.elapsed_time < mons->props["swoop_cooldown"].get_int()))
+    {
+        return false;
+    }
+
+    actor *defender = mons->get_foe();
+    coord_def target = defender->pos();
+
+    bolt tracer;
+    tracer.source = mons->pos();
+    tracer.target = target;
+    tracer.is_tracer = true;
+    tracer.pierce = true;
+    tracer.range = LOS_RADIUS;
+    tracer.fire();
+
+    for (unsigned int j = 0; j < tracer.path_taken.size(); ++j)
+    {
+        if (tracer.path_taken[j] == target)
+        {
+            if (tracer.path_taken.size() > j + 1)
+            {
+                if (monster_habitable_grid(mons, grd(tracer.path_taken[j+1]))
+                    && !actor_at(tracer.path_taken[j+1]))
+                {
+                    if (you.can_see(mons))
+                    {
+                        mprf("%s swoops through the air toward %s!",
+                             mons->name(DESC_THE).c_str(),
+                             defender->name(DESC_THE).c_str());
+                    }
+                    mons->move_to_pos(tracer.path_taken[j+1]);
+                    fight_melee(mons, defender);
+                    mons->props["swoop_cooldown"].get_int() = you.elapsed_time
+                                                              + 40 + random2(51);
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
  * Check whether this monster can make a reaching attack, and do so if
  * they can.
  *
@@ -1407,11 +1472,6 @@ static bool _handle_wand(monster* mons, bolt &beem)
         beem.damage.size = beem.damage.size * 2 / 3;
         break;
 
-    case WAND_ENSLAVEMENT:
-    case WAND_RANDOM_EFFECTS:
-        // These have been deemed "too tricky" at this time {dlb}:
-        return false;
-
     case WAND_DIGGING:
         // This is handled elsewhere.
         return false;
@@ -1751,6 +1811,14 @@ static void _pre_monster_move(monster* mons)
         const actor * const summoner = actor_by_mid(mons->summoner);
         if ((!summoner || !summoner->alive()) && mons->del_ench(ENCH_ABJ))
             return;
+    }
+
+    if (mons->has_ench(ENCH_HEXED))
+    {
+        const actor* const agent =
+            actor_by_mid(mons->get_ench(ENCH_HEXED).source);
+        if (!agent || !agent->alive())
+            mons->del_ench(ENCH_HEXED);
     }
 
     if (mons->type == MONS_SNAPLASHER_VINE
@@ -2179,6 +2247,7 @@ void handle_monster_move(monster* mons)
         // Keep neutral, charmed, summoned, and friendly monsters from
         // picking up stuff.
         if ((!mons->neutral() && !mons->has_ench(ENCH_CHARM)
+             && !mons->has_ench(ENCH_HEXED)
              || (you_worship(GOD_JIYVA) && mons_is_slime(mons)))
             && !mons->is_summoned() && !mons->is_perm_summoned()
             && !mons->friendly())
@@ -2349,6 +2418,12 @@ void handle_monster_move(monster* mons)
                 return;
             }
 
+            if (_handle_swoop(mons))
+            {
+                DEBUG_ENERGY_USE("_handle_swoop()");
+                return;
+            }
+
             if (_handle_reaching(mons))
             {
                 DEBUG_ENERGY_USE("_handle_reaching()");
@@ -2371,6 +2446,7 @@ void handle_monster_move(monster* mons)
 
             if (_unfriendly_or_insane(mons)
                 && !mons->has_ench(ENCH_CHARM)
+                && !mons->has_ench(ENCH_HEXED)
                 && !mons->withdrawn())
             {
                 monster* new_target = 0;
@@ -4501,6 +4577,7 @@ static spell_type _map_wand_to_mspell(wand_type kind)
     case WAND_DISINTEGRATION:  return SPELL_DISINTEGRATE;
     case WAND_POLYMORPH:       return SPELL_POLYMORPH;
     case WAND_DIGGING:         return SPELL_DIG;
+    case WAND_ENSLAVEMENT:     return SPELL_ENSLAVEMENT;
     default:                   return SPELL_NO_SPELL;
     }
 }

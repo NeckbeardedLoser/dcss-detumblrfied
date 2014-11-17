@@ -14,6 +14,7 @@
 
 #include "artefact.h"
 #include "art-enum.h"
+#include "butcher.h"
 #include "colour.h"
 #include "decks.h"
 #include "describe.h"
@@ -1362,10 +1363,10 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
     const bool know_ego = know_brand;
 
     // Display runed/glowing/embroidered etc?
-    // Only display this if brand is unknown or item is unbranded.
+    // Only display this if brand is unknown.
     const bool show_cosmetic = !__know_pluses && !terse && !basename
         && !qualname && !dbname
-        && (!know_brand || !special)
+        && !know_brand
         && !(ignore_flags & ISFLAG_COSMETIC_MASK);
 
     // So that show_cosmetic won't be affected by ignore_flags.
@@ -1431,6 +1432,11 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
                 buff << "vampiric ";
             else if (wpn_brand == SPWPN_ANTIMAGIC)
                 buff << "antimagic ";
+            else if (wpn_brand == SPWPN_NORMAL && !know_pluses
+                     && get_equip_desc(*this))
+            {
+                buff << "enchanted ";
+            }
         }
         buff << item_base_name(*this);
 
@@ -1885,6 +1891,12 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
     {
         if (dbname && item_typ == CORPSE_SKELETON)
             return "decaying skeleton";
+
+        if (item_typ == CORPSE_BODY && props.exists(MANGLED_CORPSE_KEY)
+            && !dbname)
+        {
+            buff << "mangled ";
+        }
 
         uint64_t name_type, name_flags = 0;
 
@@ -3360,14 +3372,16 @@ bool is_useless_item(const item_def &item, bool temp)
 
         // heal wand is useless for VS if they can't get allies
         if (item.sub_type == WAND_HEAL_WOUNDS
+            && item_type_known(item)
             && you.innate_mutation[MUT_NO_DEVICE_HEAL] == 3
             && player_mutation_level(MUT_NO_LOVE))
         {
             return true;
         }
 
-        // haste wand is useless for VS if they can't get allies
+        // haste wand is useless for Formicid if they can't get allies
         if (item.sub_type == WAND_HASTING
+            && item_type_known(item)
             && you.species == SP_FORMICID
             && player_mutation_level(MUT_NO_LOVE))
         {

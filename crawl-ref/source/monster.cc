@@ -223,6 +223,16 @@ void monster::ensure_has_client_id()
 
 mon_attitude_type monster::temp_attitude() const
 {
+    if (has_ench(ENCH_HEXED))
+    {
+        actor *agent = monster_by_mid(get_ench(ENCH_HEXED).source);
+        if (agent)
+        {
+            ASSERT(agent->is_monster());
+            return agent->as_monster()->attitude;
+        }
+        return ATT_HOSTILE; // ???
+    }
     if (has_ench(ENCH_CHARM) || has_ench(ENCH_PERMA_BRIBED))
         return ATT_FRIENDLY;
     else if (has_ench(ENCH_BRIBED))
@@ -468,8 +478,11 @@ static int _mons_offhand_weapon_index(const monster* m)
 item_def *monster::weapon(int which_attack) const
 {
     const mon_attack_def attk = mons_attack_spec(this, which_attack);
-    if (attk.type != AT_HIT && attk.type != AT_WEAP_ONLY)
+    if (attk.type != AT_HIT && attk.type != AT_WEAP_ONLY
+        && attk.type != AT_KITE && attk.type != AT_SWOOP)
+    {
         return NULL;
+    }
 
     // Even/odd attacks use main/offhand weapon.
     if (which_attack > 1)
